@@ -5,23 +5,24 @@ from Base import Train, Predict
 
 
 def getTest(boolNormalize, boolDeep, boolBias, strProjectFolder):
-
+    strProjectFolder = os.path.join(os.path.dirname(__file__))
+    strDatasetFolder=os.path.join(strProjectFolder,"datasets/preprocessed")
     if boolNormalize:
         if boolDeep:
-            strOutputPath = "02-Output/" + "Deep" + "Normal"
+            strOutputPath = "Output/" + "Deep" + "Normal/"
         else:
             if boolBias:
-                strOutputPath = "02-Output/" + "Bias" + "Normal"
+                strOutputPath = "Output/" + "Bias" + "Normal/"
             else:
-                strOutputPath = "02-Output/" + "unBias" + "Normal"
+                strOutputPath = "Output/" + "unBias" + "Normal/"
     else:
         if boolDeep:
-            strOutputPath = "02-Output/" + "Deep" 
+            strOutputPath = "Output/" + "Deep/" 
         else:
             if boolBias:
-                strOutputPath = "02-Output/" + "Bias" 
+                strOutputPath = "Output/" + "Bias/" 
             else:
-                strOutputPath = "02-Output/" + "unBias"
+                strOutputPath = "Output/" + "unBias/"
     
     strOutputPath = strOutputPath + "Test"
 

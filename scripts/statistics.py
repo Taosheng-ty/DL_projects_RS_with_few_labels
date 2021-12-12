@@ -9,7 +9,7 @@ DataTest.columns=["UserID", "ItemID", "Rating"]
 DataTrain = pd.read_csv(os.path.join(strProjectFolder, "ydata-ymusic-rating-study-v1_0-train.txt"),sep="\\t",header=None)
 DataTrain.columns=["UserID", "ItemID", "Rating"]
 bins = np.arange(0,6,0.5)+0.5
-output_dir="output/label_statistics/"
+output_dir="Output/label_statistics/"
 os.makedirs(output_dir, exist_ok=True)
 ##plot DataTrain  label statistics
 ax=DataTrain.Rating.plot.hist(bins=bins)

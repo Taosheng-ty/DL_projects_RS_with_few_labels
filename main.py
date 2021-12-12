@@ -6,59 +6,69 @@ from Base import Train, Predict, Plot, Utility
 
 
 def main(boolNormalize, boolDeep, boolBias):
-    strProjectFolder = os.path.dirname(__file__)
-
+    strProjectFolder = os.path.join(os.path.dirname(__file__))
+    strDatasetFolder=os.path.join(strProjectFolder,"datasets/preprocessed")
     if boolNormalize:
         if boolDeep:
-            strOutputPath = "02-Output/" + "Deep" + "Normal"
+            strOutputPath = "Output/" + "Deep" + "Normal/"
         else:
             if boolBias:
-                strOutputPath = "02-Output/" + "Bias" + "Normal"
+                strOutputPath = "Output/" + "Bias" + "Normal/"
             else:
-                strOutputPath = "02-Output/" + "unBias" + "Normal"
+                strOutputPath = "Output/" + "unBias" + "Normal/"
     else:
         if boolDeep:
-            strOutputPath = "02-Output/" + "Deep" 
+            strOutputPath = "Output/" + "Deep/" 
         else:
             if boolBias:
-                strOutputPath = "02-Output/" + "Bias" 
+                strOutputPath = "Output/" + "Bias/" 
             else:
-                strOutputPath = "02-Output/" + "unBias"
+                strOutputPath = "Output/" + "unBias/"
+#     test_only=True
+    if test_only:
+        DataTest = pd.read_csv(os.path.join(strDatasetFolder, "test.csv"), usecols=["UserID", "ItemID", "Rating"])
+        arrayTestUser = DataTest["UserID"].values
+        arrayTestItem= DataTest["ItemID"].values
+        arrayTestRate = DataTest["Rating"].values
+        if test_only:
+            arrayTestPredict = Predict.makePredict(arrayTestUser, arrayTestItem, \
+                                                   strProjectFolder=strProjectFolder, strOutputPath=strOutputPath)
+            TestMSE = np.mean(np.square(np.squeeze(arrayTestPredict) - arrayTestRate))
+            TestRMSE = np.sqrt(np.mean(np.square(np.squeeze(arrayTestPredict) - arrayTestRate)))    
+            print("TestMSE,TestRMSE",TestMSE,TestRMSE)
+            return 
+                
+    os.makedirs(os.path.join(strProjectFolder,strOutputPath), exist_ok=True)
+    DataTrain = pd.read_csv(os.path.join(strDatasetFolder, "train.csv"), usecols=["UserID", "ItemID", "Rating"])
+    DataAux = pd.read_csv(os.path.join(strDatasetFolder, "aux.csv"), usecols=["UserID", "ItemID", "Rating"])
+    DataValid = pd.read_csv(os.path.join(strDatasetFolder, "vali.csv"), usecols=["UserID", "ItemID", "Rating"])
 
-    DataTrain = pd.read_csv(os.path.join(strProjectFolder, "01-Data/train.csv"), usecols=["UserID", "MovieID", "Rating"])
-    DataUser = pd.read_csv(os.path.join(strProjectFolder, "01-Data/users.csv"), sep="::", usecols=["UserID", "Gender", "Age", "Occupation", "Zip-code"])
-    DataMovie = pd.read_csv(os.path.join(strProjectFolder, "01-Data/movies.csv"), sep="::", usecols=["MovieID", "Title", "Genres"])
-#     DataMovie = Utility.getLabelEncoder(DataMovie)
+#     DataItem = Utility.getLabelEncoder(DataItem)
 
     DataTrain = DataTrain.sample(frac=1.0, random_state=10)
-    intUserSize = len(DataUser["UserID"].drop_duplicates())
-    intMovieSize = len(DataMovie["MovieID"].drop_duplicates())
+    intUserSize = len(DataTrain["UserID"].drop_duplicates())
+    intItemSize = len(DataTrain["ItemID"].drop_duplicates())
 
-    arrayUsers = DataTrain["UserID"].values
-    arrayMovies = DataTrain["MovieID"].values
-    arrayRate = DataTrain["Rating"].values
 
     intLatentSize = 32
-    intVaildSize = 80000
-    arrayTrainUser = arrayUsers[:-intVaildSize]
-    arrayTrainMovie = arrayMovies[:-intVaildSize]
-    arrayTrainRate = arrayRate[:-intVaildSize]
+    
+    arrayTrainUser = DataTrain["UserID"].values
+    arrayTrainItem= DataTrain["ItemID"].values
+    arrayTrainRate = DataTrain["Rating"].values
 
-    arrayValidUser = arrayUsers[-intVaildSize:]
-    arrayValidMovie = arrayMovies[-intVaildSize:]
-    arrayValidRate = arrayRate[-intVaildSize:]
+    arrayValidUser = DataValid["UserID"].values
+    arrayValidItem= DataValid["ItemID"].values
+    arrayValidRate = DataValid["Rating"].values
 
+   
     arrayTrainRateAvg = np.mean(arrayTrainRate)
     arrayTrainRateStd = np.std(arrayTrainRate)
 
-    if boolNormalize:
-        arrayTrainRate = (arrayTrainRate - arrayTrainRateAvg)/arrayTrainRateStd
-        arrayValidRate = (arrayValidRate - arrayTrainRateAvg)/arrayTrainRateStd
 
-    Train.getTrain(arrayTrainUser=arrayTrainUser, arrayTrainMovie=arrayTrainMovie, arrayTrainRate=arrayTrainRate
-                , arrayValidUser=arrayValidUser, arrayValidMovie=arrayValidMovie, arrayValidRate=arrayValidRate
+    Train.getTrain(arrayTrainUser=arrayTrainUser, arrayTrainMovie=arrayTrainItem, arrayTrainRate=arrayTrainRate
+                , arrayValidUser=arrayValidUser, arrayValidMovie=arrayValidItem, arrayValidRate=arrayValidRate
                 , intUserSize=intUserSize
-                , intMovieSize=intMovieSize
+                , intMovieSize=intItemSize
                 , intLatentSize=intLatentSize
                 , boolBias=boolBias
                 , boolDeep=boolDeep
@@ -68,21 +78,17 @@ def main(boolNormalize, boolDeep, boolBias):
     Plot.plotLossAccuracyCurves(strProjectFolder, strOutputPath)
 
 #     if not boolDeep:
-#         Plot.plotMovieEmbeddingTSNE(DataMovie, strProjectFolder, strOutputPath)
+#         Plot.plotItemEmbeddingTSNE(DataItem, strProjectFolder, strOutputPath)
 
-    arrayTrainPredict = Predict.makePredict(arrayTrainUser, arrayTrainMovie, strProjectFolder=strProjectFolder, strOutputPath=strOutputPath)
-    if boolNormalize:
-        arrayTrainPredict = (arrayTrainPredict * arrayTrainRateStd) + arrayTrainRateAvg
-    trainMSE = np.mean(np.square(np.squeeze(arrayTrainPredict) - arrayRate[:-intVaildSize]))
-    trainRMSE = np.sqrt(np.mean(np.square(np.squeeze(arrayTrainPredict) - arrayRate[:-intVaildSize])))
+    arrayTrainPredict = Predict.makePredict(arrayTrainUser, arrayTrainItem, strProjectFolder=strProjectFolder, strOutputPath=strOutputPath)
+    trainMSE = np.mean(np.square(np.squeeze(arrayTrainPredict) - arrayTrainRate))
+    trainRMSE = np.sqrt(np.mean(np.square(np.squeeze(arrayTrainPredict) - arrayTrainRate)))
 
-    arrayValidPredict = Predict.makePredict(arrayValidUser, arrayValidMovie, strProjectFolder=strProjectFolder, strOutputPath=strOutputPath)
-    if boolNormalize:
-        arrayValidPredict = (arrayValidPredict * arrayTrainRateStd) + arrayTrainRateAvg
-    ValidMSE = np.mean(np.square(np.squeeze(arrayValidPredict) - arrayRate[-intVaildSize:]))
-    ValidRMSE = np.sqrt(np.mean(np.square(np.squeeze(arrayValidPredict) - arrayRate[-intVaildSize:])))
-    
+    arrayValidPredict = Predict.makePredict(arrayValidUser, arrayValidItem, strProjectFolder=strProjectFolder, strOutputPath=strOutputPath)
+    ValidMSE = np.mean(np.square(np.squeeze(arrayValidPredict) - arrayValidRate))
+    ValidRMSE = np.sqrt(np.mean(np.square(np.squeeze(arrayValidPredict) - arrayValidRate)))
     print(trainMSE, trainRMSE, ValidMSE, ValidRMSE)
+    
 
 if __name__ == "__main__":
     config_tf = tf.ConfigProto()
@@ -91,7 +97,7 @@ if __name__ == "__main__":
                                         # (nothing gets printed in Jupyter, only if you run it standalone)
     sess = tf.Session(config=config_tf)
    
-    main(boolNormalize=True, boolDeep=True, boolBias=False)
+    main(boolNormalize=False, boolDeep=False, boolBias=True)
 
 
 

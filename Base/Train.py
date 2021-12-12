@@ -15,7 +15,7 @@ def getTrain(arrayTrainUser, arrayTrainMovie, arrayTrainRate, arrayValidUser, ar
                , ModelCheckpoint(os.path.join(strProjectFolder, strOutputPath + "model.h5"), save_best_only=True)
                , CSVLogger(os.path.join(strProjectFolder, strOutputPath + "log.csv"), separator=",", append=False)]
     
-    model.fit([arrayTrainUser, arrayTrainMovie], arrayTrainRate, epochs=100, batch_size=4096, verbose=2, validation_data=([arrayValidUser, arrayValidMovie], arrayValidRate), callbacks=callbacks)
+    model.fit([arrayTrainUser, arrayTrainMovie], arrayTrainRate, epochs=1000, batch_size=4096, verbose=0, validation_data=([arrayValidUser, arrayValidMovie], arrayValidRate), callbacks=callbacks)
 
     model.save(os.path.join(strProjectFolder, strOutputPath + "model.h5"))
 
